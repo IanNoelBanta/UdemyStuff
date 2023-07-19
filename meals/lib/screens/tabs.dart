@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:meals/screens/categories.dart';
 import 'package:meals/screens/meals.dart';
+import 'package:meals/widgets/main_drawer.dart';
+
+import '../models/meal.dart';
 
 class TabScreen extends StatefulWidget {
   const TabScreen({super.key});
@@ -18,13 +21,52 @@ class _TabScreenState extends State<TabScreen> {
     });
   }
 
+  final List<Meal> _favoriteMeals = [];
+  bool isFavorite = true;
+
+  void _onToggleMealFavoriteStatus(Meal meal) {
+    final isExisting = _favoriteMeals.contains(meal);
+
+    if (isExisting) {
+      setState(() {
+        _favoriteMeals.remove(meal);
+      });
+      _showMessage('${meal.title} was removed from your favorites.', meal);
+    } else {
+      setState(() {
+        _favoriteMeals.add(meal);
+        isFavorite = false;
+      });
+      _showMessage('${meal.title} was added to your favorites.', meal);
+    }
+  }
+
+  void _setScreen(String identifier) {
+    if (identifier == 'Filters') {
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _showMessage(String message, Meal meal) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message, textAlign: TextAlign.justify,)));
+  }
+
   @override
   Widget build(context) {
-    Widget activePage = const CategoriesScreen();
+    Widget activePage = CategoriesScreen(
+      onToggleFavorite: _onToggleMealFavoriteStatus, isFavorite: isFavorite,
+    );
     var activePageTitle = 'Categories';
 
     if (_selectedPageIndex == 1) {
-      activePage = const MealsScreen(meals: []);
+      activePage = MealsScreen(
+        meals: _favoriteMeals,
+        onToggleFavorite: _onToggleMealFavoriteStatus,
+        isFavorite: isFavorite,
+      );
       activePageTitle = 'Your Favorites';
     }
 
@@ -32,6 +74,7 @@ class _TabScreenState extends State<TabScreen> {
       appBar: AppBar(
         title: Text(activePageTitle),
       ),
+      drawer: MainDrawer(onSelectScreen: _setScreen),
       body: activePage,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedPageIndex,
@@ -39,11 +82,18 @@ class _TabScreenState extends State<TabScreen> {
           _selectPage(index);
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.set_meal), label: 'Categories'),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favorites'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.set_meal),
+            label: 'Categories',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.star,
+            ),
+            label: 'Favorites',
+          ),
         ],
       ),
-
     );
   }
 }
